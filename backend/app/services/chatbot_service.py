@@ -42,9 +42,12 @@ Never answer immediately. Always:
 5. explain causes;
 6. recommend actions;
 7. cite sources.
-Never hallucinate. If information is missing, explicitly state it."""
+Never hallucinate. Do not include citation markers like 【1†source】 in the output text. If information is missing, explicitly state it."""
 
         answer = llm_service.generate_text(context, system_prompt)
+        
+        import re
+        answer = re.sub(r'【.*?】', '', answer)
         
         return answer, retrieved_chunks
 

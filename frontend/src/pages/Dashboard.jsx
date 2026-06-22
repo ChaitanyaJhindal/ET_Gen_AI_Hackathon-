@@ -154,7 +154,7 @@ const Dashboard = () => {
                 <span className="badge success">Online</span>
               </li>
               <li>
-                <span>Groq Llama-3 120B</span>
+                <span>GPT-OSS 120B (Groq)</span>
                 <span className="badge success">Online</span>
               </li>
               <li>

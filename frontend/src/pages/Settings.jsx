@@ -53,7 +53,6 @@ const Settings = () => {
           <div className="about-info">
             <p><strong>Version:</strong> 1.0.0-rc.4</p>
             <p><strong>Environment:</strong> Production</p>
-            <p><strong>License:</strong> Enterprise (Siemens Hackathon)</p>
           </div>
         </div>
       </div>

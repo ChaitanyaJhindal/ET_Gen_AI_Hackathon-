@@ -45,7 +45,7 @@ async def upload_document(file: UploadFile = File(...)):
         for i, chunk in enumerate(chunks):
             metadatas.append({
                 "filename": file.filename,
-                "equipment_ids": ",".join(equipment_ids) if equipment_ids else "None"
+                "equipment_ids": ",".join(str(e) for e in equipment_ids) if equipment_ids else "None"
             })
             ids.append(str(uuid.uuid4()))
             

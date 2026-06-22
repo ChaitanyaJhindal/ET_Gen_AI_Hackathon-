@@ -26,29 +26,33 @@ class ChatbotService:
         asset_context = "\n\n".join(asset_knowledge_texts)
         
         # 3. Retrieve related chunks from ChromaDB
-        retrieved_chunks = vector_service.retrieve(question, n_results=5)
+        retrieved_chunks, retrieved_metas = vector_service.retrieve_with_metadata(question, n_results=5)
         doc_context = "DOCUMENT KNOWLEDGE\n" + "\n".join(retrieved_chunks) if retrieved_chunks else ""
+        
+        # Clean up sources for the UI
+        ui_sources = []
+        for meta in retrieved_metas:
+            source_name = meta.get("source", "Knowledge Base Document")
+            # If the source is an absolute path, just get the filename
+            import os
+            source_name = os.path.basename(source_name)
+            if source_name not in ui_sources:
+                ui_sources.append(source_name)
         
         # 4. Assemble context
         context = f"{asset_context}\n\n{doc_context}\n\nQUESTION\n{question}"
         
         # 5. Send to LLM
-        system_prompt = """You are an Industrial Knowledge Intelligence assistant.
-Never answer immediately. Always:
-1. understand the asset involved;
-2. inspect historical knowledge;
-3. inspect retrieved documents;
-4. correlate information;
-5. explain causes;
-6. recommend actions;
-7. cite sources.
-Never hallucinate. Do not include citation markers like 【1†source】 in the output text. If information is missing, explicitly state it."""
+        system_prompt = """You are an Industrial Knowledge Intelligence assistant answering queries for engineers.
+Format your output cleanly using HTML-friendly spacing. 
+Use concise bullet points, bolded key terms, and short paragraphs. Do NOT use markdown tables, they do not render well. Do NOT use overly robotic numbering like "1. Asset Understanding", "2. Historical Knowledge", etc. Just answer the question naturally but with a structured flow.
+Never hallucinate. Do not include citation markers like 【1†source】 in the output text."""
 
         answer = llm_service.generate_text(context, system_prompt)
         
         import re
         answer = re.sub(r'【.*?】', '', answer)
         
-        return answer, retrieved_chunks
+        return answer, ui_sources
 
 chatbot_service = ChatbotService()

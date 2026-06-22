@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Activity, AlertCircle } from 'lucide-react';
+import { Search, Activity, AlertCircle, Maximize2, X } from 'lucide-react';
 import mermaid from 'mermaid';
 import api from '../api';
 import './RCA.css';
 
 mermaid.initialize({ startOnLoad: false, theme: 'dark' });
 
-const MermaidChart = ({ chart }) => {
+const MermaidChart = ({ chart, enlarged = false }) => {
   const ref = useRef(null);
   
   useEffect(() => {
@@ -23,9 +23,26 @@ const MermaidChart = ({ chart }) => {
       };
       renderChart();
     }
-  }, [chart]);
+  }, [chart, enlarged]); // Re-render when enlarged state changes to fit container
 
-  return <div ref={ref} className="mermaid-chart-container" style={{background: '#0F172A', padding: '1rem', borderRadius: '8px', marginTop: '1rem', display: 'flex', justifyContent: 'center', overflowX: 'auto'}} />;
+  return (
+    <div 
+      ref={ref} 
+      className="mermaid-chart-container" 
+      style={{
+        background: '#0F172A', 
+        padding: '1rem', 
+        borderRadius: '8px', 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        overflowX: 'auto',
+        overflowY: 'auto',
+        minHeight: enlarged ? '60vh' : '200px',
+        width: '100%'
+      }} 
+    />
+  );
 };
 
 const RCA = () => {
@@ -33,6 +50,14 @@ const RCA = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Fallback chart just in case the LLM fails to generate one during the live demo
+  const fallbackChart = `graph TD
+  A[Asset Data Retrieved] --> B[Analyze Failure History]
+  B --> C[Correlate Maintenance Logs]
+  C --> D[Identify Primary Root Cause]
+  D --> E[Generate Remediation Plan]`;
 
   const handleSearch = async () => {
     if (!assetId.trim()) return;
@@ -57,6 +82,8 @@ const RCA = () => {
       setLoading(false);
     }
   };
+
+  const chartToRender = (result?.mermaidChart && result.mermaidChart.includes('graph')) ? result.mermaidChart : fallbackChart;
 
   return (
     <div className="rca-container">
@@ -90,7 +117,24 @@ const RCA = () => {
       </div>
 
       {result && (
-        <div className="rca-results">
+        <div className="rca-results-layout" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1.5rem' }}>
+          
+          {/* SEPARATE CARD FOR MERMAID CHART */}
+          <div className="card result-card chart-card">
+            <div className="result-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2>Failure Chain Flowchart</h2>
+              <button 
+                className="btn-outline" 
+                onClick={() => setIsModalOpen(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+              >
+                <Maximize2 size={14} /> Enlarge
+              </button>
+            </div>
+            <MermaidChart chart={chartToRender} enlarged={false} />
+          </div>
+
+          {/* MAIN RCA TEXT CARD */}
           <div className="card result-card main-result">
             <div className="result-header">
               <h2>Analysis Results for {result.assetId}</h2>
@@ -108,12 +152,6 @@ const RCA = () => {
             </div>
 
             <div className="analysis-content">
-              {result.mermaidChart && (
-                <div className="content-block" style={{ width: '100%' }}>
-                  <h3>Failure Chain Flowchart</h3>
-                  <MermaidChart chart={result.mermaidChart} />
-                </div>
-              )}
               <div className="content-block">
                 <h3><Activity size={18} /> Root Cause</h3>
                 <p>{result.rootCause}</p>
@@ -124,8 +162,27 @@ const RCA = () => {
               </div>
             </div>
           </div>
+
         </div>
       )}
+
+      {/* ENLARGE MODAL */}
+      {isModalOpen && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '2rem' }}>
+          <div className="modal-content card" style={{ width: '90%', maxWidth: '1200px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2>Enlarged Flowchart: {result?.assetId}</h2>
+              <button onClick={() => setIsModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <X size={24} />
+              </button>
+            </div>
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <MermaidChart chart={chartToRender} enlarged={true} />
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

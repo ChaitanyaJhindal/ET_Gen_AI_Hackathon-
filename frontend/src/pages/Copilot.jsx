@@ -64,9 +64,13 @@ const Copilot = () => {
             <div key={idx} className={`message-row ${msg.role}`}>
               <div className={`message-bubble ${msg.role}`}>
                 <div className="message-content">
-                  {msg.content.split('\n').map((line, i) => (
-                    <p key={i}>{line || '\u00A0'}</p>
-                  ))}
+                  {msg.content.split('\n').map((line, i) => {
+                    if (!line) return <p key={i}>&nbsp;</p>;
+                    const html = line
+                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                      .replace(/\*(.*?)\*/g, '<em>$1</em>');
+                    return <p key={i} dangerouslySetInnerHTML={{ __html: html }}></p>;
+                  })}
                 </div>
                 {msg.sources && msg.sources.length > 0 && (
                   <div className="message-sources">

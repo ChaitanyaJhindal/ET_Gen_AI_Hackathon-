@@ -13,7 +13,10 @@ async def perform_rca(request: RCARequest):
         result = rca_service.generate_rca(request.asset_id)
         return RCAResponse(
             root_cause=result.get("root_cause", ""),
-            recommendation=result.get("recommendation", "")
+            recommendation=result.get("recommendation", ""),
+            mermaid_chart=result.get("mermaid_chart", ""),
+            severity=result.get("severity", "High"),
+            confidence=result.get("confidence", 85)
         )
     except Exception as e:
         logger.error(f"RCA failed: {e}")

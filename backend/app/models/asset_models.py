@@ -26,3 +26,6 @@ class RCARequest(BaseModel):
 class RCAResponse(BaseModel):
     root_cause: str
     recommendation: str
+    mermaid_chart: Optional[str] = None
+    severity: Optional[str] = None
+    confidence: Optional[int] = None

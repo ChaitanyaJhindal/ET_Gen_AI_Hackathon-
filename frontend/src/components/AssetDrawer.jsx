@@ -50,7 +50,7 @@ const AssetDrawer = ({ asset, isOpen, onClose }) => {
                     <div className="timeline-dot danger"></div>
                     <div className="timeline-content">
                       <span className="timeline-date">Detected Issue</span>
-                      <p>{f}</p>
+                      <p>{typeof f === 'string' ? f : f.subpart_name ? `${f.subpart_name}: ${f.status}` : JSON.stringify(f)}</p>
                     </div>
                   </div>
                 ))}

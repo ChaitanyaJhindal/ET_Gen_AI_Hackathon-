@@ -11,7 +11,7 @@ class LLMService:
         self.llm = ChatGroq(
             model=settings.GROQ_MODEL,
             api_key=settings.GROQ_API_KEY,
-            temperature=0,
+            temperature=0.2,
             max_tokens=2048,
         )
 
@@ -37,13 +37,24 @@ class LLMService:
             logger.error(f"LLM JSON generation failed: {e}")
             return {}
             
-    def generate_text(self, prompt: str, system_prompt: str) -> str:
+    def generate_text(self, prompt: str, system_prompt: str, model_override: str = None) -> str:
         try:
             messages = [
                 SystemMessage(content=system_prompt),
                 HumanMessage(content=prompt)
             ]
-            response = self.llm.invoke(messages)
+            
+            if model_override:
+                subagent_llm = ChatGroq(
+                    model=model_override,
+                    api_key=settings.GROQ_API_KEY,
+                    temperature=0.2,
+                    max_tokens=2048,
+                )
+                response = subagent_llm.invoke(messages)
+            else:
+                response = self.llm.invoke(messages)
+                
             return response.content.strip()
         except Exception as e:
             logger.error(f"LLM Text generation failed: {e}")

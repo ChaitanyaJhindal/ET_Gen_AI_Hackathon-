@@ -57,4 +57,24 @@ class VectorService:
             logger.error(f"Vector retrieval failed: {e}")
             return []
 
+    def retrieve_with_metadata(self, query: str, n_results: int = 5) -> tuple[list[str], list[dict]]:
+        try:
+            from app.services.embedding_service import embedding_service
+            embeddings_model = embedding_service.get_embeddings()
+            query_embedding = embeddings_model.embed_query(query)
+            
+            results = self.collection.query(
+                query_embeddings=[query_embedding],
+                n_results=n_results
+            )
+            
+            if results and results['documents'] and len(results['documents']) > 0:
+                docs = results['documents'][0]
+                metas = results['metadatas'][0] if 'metadatas' in results and results['metadatas'] else [{}] * len(docs)
+                return docs, metas
+            return [], []
+        except Exception as e:
+            logger.error(f"Vector metadata retrieval failed: {e}")
+            return [], []
+
 vector_service = VectorService()

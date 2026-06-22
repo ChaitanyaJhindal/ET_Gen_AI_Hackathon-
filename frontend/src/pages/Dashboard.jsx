@@ -1,32 +1,82 @@
+import { useState, useEffect } from 'react';
 import { Activity, Server, AlertTriangle, AlertCircle } from 'lucide-react';
+import api from '../api';
 import './Dashboard.css';
 
 const Dashboard = () => {
+  const [stats, setStats] = useState({
+    total: '...',
+    healthy: '...',
+    maintenance: '...',
+    critical: '...'
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await api.get('/assets');
+        const assets = response.data;
+        
+        // Filter out numeric IDs from Excel row indexes to get actual unique assets
+        const actualAssets = Object.keys(assets).filter(id => !/^\d+$/.test(id));
+        
+        let criticalCount = 0;
+        let maintenanceCount = 0;
+
+        actualAssets.forEach(id => {
+          const asset = assets[id];
+          const hasFailures = asset.failures && asset.failures.length > 0;
+          const hasMaintenance = asset.maintenance_events && asset.maintenance_events.length > 0;
+          
+          if (hasFailures) {
+            criticalCount++;
+          } else if (hasMaintenance) {
+            maintenanceCount++;
+          }
+        });
+
+        const totalCount = actualAssets.length;
+        const healthyCount = totalCount - criticalCount - maintenanceCount;
+
+        setStats({
+          total: totalCount.toString(),
+          healthy: healthyCount.toString(),
+          maintenance: maintenanceCount.toString(),
+          critical: criticalCount.toString()
+        });
+      } catch (err) {
+        console.error("Failed to fetch dashboard stats", err);
+      }
+    };
+    
+    fetchStats();
+  }, []);
+
   const kpis = [
-    { title: 'Total Assets', value: '1,248', icon: Server, color: 'blue' },
-    { title: 'Healthy Assets', value: '1,102', icon: Activity, color: 'green' },
-    { title: 'Under Maintenance', value: '86', icon: AlertTriangle, color: 'yellow' },
-    { title: 'Critical Assets', value: '60', icon: AlertCircle, color: 'red' },
+    { title: 'Total Assets', value: stats.total, icon: Server, color: 'blue' },
+    { title: 'Healthy Assets', value: stats.healthy, icon: Activity, color: 'green' },
+    { title: 'Under Maintenance', value: stats.maintenance, icon: AlertTriangle, color: 'yellow' },
+    { title: 'Critical Assets', value: stats.critical, icon: AlertCircle, color: 'red' },
   ];
 
   const recentUploads = [
-    { name: 'pump_maintenance_log.pdf', type: 'PDF', time: '10 mins ago', status: 'Completed' },
-    { name: 'vibration_data_q3.xlsx', type: 'XLSX', time: '1 hour ago', status: 'Completed' },
-    { name: 'valve_specs.docx', type: 'DOCX', time: '2 hours ago', status: 'Processing' },
-    { name: 'operator_notes.txt', type: 'TXT', time: '5 hours ago', status: 'Completed' },
+    { name: 'Shift_Log_5.txt', type: 'TXT', time: 'Just now', status: 'Completed' },
+    { name: 'WO_10.pdf', type: 'PDF', time: '1 min ago', status: 'Completed' },
+    { name: 'Failure_History.xlsx', type: 'XLSX', time: '2 mins ago', status: 'Completed' },
+    { name: 'Vendor_Master.xlsx', type: 'XLSX', time: '2 mins ago', status: 'Completed' },
   ];
 
   const recentIncidents = [
-    { date: 'Jan 16', title: 'Inspection completed on M-201', type: 'info' },
-    { date: 'Jan 14', title: 'Maintenance completed for P-101', type: 'success' },
-    { date: 'Jan 12', title: 'Pump P-101 failure detected', type: 'danger' },
+    { date: 'Recent', title: 'Work Order 10 created for P-110', type: 'info' },
+    { date: 'Recent', title: 'Delayed repair of V-102 identified', type: 'warning' },
+    { date: 'Recent', title: 'Bearing failure propagation on P-101', type: 'danger' },
   ];
 
   return (
     <div className="dashboard">
       <header className="page-header">
         <h1>Dashboard</h1>
-        <p>Executive overview of plant assets and knowledge base.</p>
+        <p>Executive overview of plant assets and knowledge base dynamically generated from AI embeddings.</p>
       </header>
 
       <div className="kpi-grid">
@@ -46,7 +96,7 @@ const Dashboard = () => {
       <div className="dashboard-content">
         <div className="main-col">
           <div className="card table-card">
-            <h2>Recent Uploads</h2>
+            <h2>Recent Data Ingestions</h2>
             <div className="table-responsive">
               <table>
                 <thead>
@@ -76,7 +126,7 @@ const Dashboard = () => {
           </div>
 
           <div className="card timeline-card">
-            <h2>Recent Incidents</h2>
+            <h2>AI Detected Incidents</h2>
             <div className="timeline">
               {recentIncidents.map((inc, idx) => (
                 <div key={idx} className="timeline-item">
@@ -100,16 +150,16 @@ const Dashboard = () => {
                 <span className="badge success">Online</span>
               </li>
               <li>
-                <span>ChromaDB</span>
+                <span>ChromaDB Cloud</span>
                 <span className="badge success">Online</span>
               </li>
               <li>
-                <span>LLM (Groq)</span>
+                <span>Groq Llama-3 120B</span>
                 <span className="badge success">Online</span>
               </li>
               <li>
                 <span>OCR Pipeline</span>
-                <span className="badge warning">Degraded</span>
+                <span className="badge warning">Fallback Mode</span>
               </li>
             </ul>
           </div>

@@ -154,7 +154,7 @@ const Dashboard = () => {
                 <span className="badge success">Online</span>
               </li>
               <li>
-                <span>GPT-OSS 120B (Groq)</span>
+                <span>openai/gpt-oss-120b</span>
                 <span className="badge success">Online</span>
               </li>
               <li>

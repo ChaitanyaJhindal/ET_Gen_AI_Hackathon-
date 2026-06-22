@@ -26,10 +26,11 @@ MAINTENANCE HISTORY: {maintenance}
 RELATED DOCUMENTS: {doc_context}
 
 Perform a Root Cause Analysis for {asset_id}.
-Return STRICT JSON with two keys:
+Return STRICT JSON with three keys:
 {{
   "root_cause": "Detailed explanation of the likely root cause",
-  "recommendation": "Actionable recommendations"
+  "recommendation": "Actionable recommendations",
+  "mermaid_chart": "A valid mermaid.js code snippet (graph TD) illustrating the chain of events leading to the failure. Do not include markdown codeblocks around the mermaid code inside the json string."
 }}"""
 
         system_prompt = "You are an Industrial RCA Expert. Output ONLY valid JSON."
@@ -37,7 +38,8 @@ Return STRICT JSON with two keys:
         
         return {
             "root_cause": result.get("root_cause", "Analysis failed."),
-            "recommendation": result.get("recommendation", "Analysis failed.")
+            "recommendation": result.get("recommendation", "Analysis failed."),
+            "mermaid_chart": result.get("mermaid_chart", "")
         }
 
 rca_service = RCAService()

@@ -1,7 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, Activity, AlertCircle } from 'lucide-react';
+import mermaid from 'mermaid';
 import api from '../api';
 import './RCA.css';
+
+mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+
+const MermaidChart = ({ chart }) => {
+  const ref = useRef(null);
+  
+  useEffect(() => {
+    if (chart && ref.current) {
+      const renderChart = async () => {
+        try {
+          const id = 'mermaid-svg-' + Math.random().toString(36).substr(2, 9);
+          const { svg } = await mermaid.render(id, chart);
+          if (ref.current) ref.current.innerHTML = svg;
+        } catch (e) {
+          console.error("Mermaid render error", e);
+          if (ref.current) ref.current.innerHTML = `<div class="error-message" style="color: var(--danger-color)">Failed to render flowchart.</div>`;
+        }
+      };
+      renderChart();
+    }
+  }, [chart]);
+
+  return <div ref={ref} className="mermaid-chart-container" style={{background: '#0F172A', padding: '1rem', borderRadius: '8px', marginTop: '1rem', display: 'flex', justifyContent: 'center', overflowX: 'auto'}} />;
+};
 
 const RCA = () => {
   const [assetId, setAssetId] = useState('');
@@ -20,10 +45,10 @@ const RCA = () => {
       setResult({
         assetId: assetId,
         rootCause: response.data.root_cause,
-        severity: 'High', // Defaulting as model only returns cause and recommendation currently
+        severity: 'High',
         confidence: 85,
         recommendation: response.data.recommendation,
-        similarFailures: [] // Not supported in current BE model yet
+        mermaidChart: response.data.mermaid_chart
       });
     } catch (err) {
       console.error('RCA failed:', err);
@@ -83,6 +108,12 @@ const RCA = () => {
             </div>
 
             <div className="analysis-content">
+              {result.mermaidChart && (
+                <div className="content-block" style={{ width: '100%' }}>
+                  <h3>Failure Chain Flowchart</h3>
+                  <MermaidChart chart={result.mermaidChart} />
+                </div>
+              )}
               <div className="content-block">
                 <h3><Activity size={18} /> Root Cause</h3>
                 <p>{result.rootCause}</p>

@@ -1,25 +1,62 @@
-import { useState } from 'react';
-import { Search, MapPin, Calendar } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, MapPin, Calendar, AlertCircle } from 'lucide-react';
+import api from '../api';
 import AssetDrawer from '../components/AssetDrawer';
 import './AssetIntelligence.css';
 
 const AssetIntelligence = () => {
   const [selectedAsset, setSelectedAsset] = useState(null);
+  const [assets, setAssets] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const assets = [
-    { id: 'P-101', name: 'Pump P-101', type: 'Centrifugal Pump', status: 'Not Working', location: 'Unit 4', lastInspection: 'Jan 10, 2026', operator: 'Rajesh Kumar', phone: '9876543210' },
-    { id: 'V-102', name: 'Valve V-102', type: 'Control Valve', status: 'Working', location: 'Unit 2', lastInspection: 'Jan 15, 2026', operator: 'Amit Singh', phone: '9876543211' },
-    { id: 'M-201', name: 'Motor M-201', type: 'Induction Motor', status: 'Under Maintenance', location: 'Unit 4', lastInspection: 'Jan 16, 2026', operator: 'Suresh Patel', phone: '9876543212' },
-    { id: 'C-305', name: 'Compressor C-305', type: 'Gas Compressor', status: 'Working', location: 'Unit 1', lastInspection: 'Jan 05, 2026', operator: 'Rajesh Kumar', phone: '9876543210' },
-    { id: 'HX-401', name: 'Heat Exch. HX-401', type: 'Shell & Tube', status: 'Working', location: 'Unit 3', lastInspection: 'Dec 20, 2025', operator: 'Vijay Mehta', phone: '9876543213' },
-    { id: 'P-102', name: 'Pump P-102', type: 'Centrifugal Pump', status: 'Working', location: 'Unit 4', lastInspection: 'Jan 10, 2026', operator: 'Suresh Patel', phone: '9876543212' },
-  ];
+  useEffect(() => {
+    const fetchAssets = async () => {
+      try {
+        const response = await api.get('/assets');
+        const data = response.data;
+        
+        // Filter out numeric IDs from Excel row indexes to get actual unique assets
+        const actualAssets = Object.keys(data).filter(id => !/^\d+$/.test(id)).map(id => {
+          const a = data[id];
+          
+          let status = 'Working';
+          if (a.failures && a.failures.length > 0) {
+            status = 'Critical';
+          } else if (a.maintenance_events && a.maintenance_events.length > 0) {
+            status = 'Under Maintenance';
+          }
+
+          return {
+            id: id,
+            name: `Asset ${id}`,
+            type: 'Industrial Equipment',
+            status: status,
+            location: 'Plant Floor',
+            lastInspection: 'See AI Logs',
+            operator: a.operator || 'Unassigned',
+            phone: a.phone || 'N/A',
+            failures: a.failures || [],
+            maintenance_events: a.maintenance_events || [],
+            documents: a.documents || []
+          };
+        });
+        
+        setAssets(actualAssets);
+      } catch (err) {
+        console.error("Failed to fetch assets", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchAssets();
+  }, []);
 
   return (
     <div className="asset-intel">
       <header className="page-header">
         <h1>Asset Intelligence</h1>
-        <p>Monitor and analyze all industrial assets across the plant.</p>
+        <p>Monitor and analyze all industrial assets across the plant, powered by AI.</p>
       </header>
 
       <div className="filters card">
@@ -29,30 +66,41 @@ const AssetIntelligence = () => {
         </div>
       </div>
 
-      <div className="asset-grid">
-        {assets.map((asset) => (
-          <div key={asset.id} className="card asset-card" onClick={() => setSelectedAsset(asset)}>
-            <div className="asset-header">
-              <h3>{asset.id}</h3>
-              <span className={`badge ${asset.status === 'Working' ? 'success' : asset.status === 'Under Maintenance' ? 'warning' : 'danger'}`}>
-                {asset.status}
-              </span>
-            </div>
-            <div className="asset-body">
-              <p className="asset-name">{asset.name}</p>
-              <p className="asset-type">{asset.type}</p>
-            </div>
-            <div className="asset-footer">
-              <div className="footer-item">
-                <MapPin size={14} /> {asset.location}
+      {loading ? (
+        <div className="loading-state" style={{ padding: '2rem', textAlign: 'center' }}>
+          Loading asset intelligence from knowledge base...
+        </div>
+      ) : (
+        <div className="asset-grid">
+          {assets.map((asset) => (
+            <div key={asset.id} className="card asset-card" onClick={() => setSelectedAsset(asset)}>
+              <div className="asset-header">
+                <h3>{asset.id}</h3>
+                <span className={`badge ${asset.status === 'Working' ? 'success' : asset.status === 'Under Maintenance' ? 'warning' : 'danger'}`}>
+                  {asset.status}
+                </span>
               </div>
-              <div className="footer-item">
-                <Calendar size={14} /> {asset.lastInspection}
+              <div className="asset-body">
+                <p className="asset-name">{asset.name}</p>
+                <p className="asset-type">{asset.type}</p>
+                {asset.failures.length > 0 && (
+                  <p className="error-message" style={{ fontSize: '0.8rem', marginTop: '0.5rem', color: 'var(--danger-color)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <AlertCircle size={12} /> {asset.failures.length} active failure(s)
+                  </p>
+                )}
+              </div>
+              <div className="asset-footer">
+                <div className="footer-item">
+                  <MapPin size={14} /> {asset.location}
+                </div>
+                <div className="footer-item">
+                  <Calendar size={14} /> {asset.lastInspection}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <AssetDrawer 
         asset={selectedAsset} 

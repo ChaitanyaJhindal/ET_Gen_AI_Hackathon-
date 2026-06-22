@@ -1,4 +1,4 @@
-import { X, Phone, User, MapPin, Activity, CheckCircle, AlertTriangle } from 'lucide-react';
+import { X, Phone, User, MapPin, Activity, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
 import './AssetDrawer.css';
 
 const AssetDrawer = ({ asset, isOpen, onClose }) => {
@@ -42,39 +42,62 @@ const AssetDrawer = ({ asset, isOpen, onClose }) => {
           </div>
 
           <div className="card drawer-section">
-            <h3>Maintenance Timeline</h3>
-            <div className="timeline">
-              <div className="timeline-item">
-                <div className="timeline-dot success"></div>
-                <div className="timeline-content">
-                  <span className="timeline-date">Jan 16</span>
-                  <p>Repair completed</p>
-                </div>
+            <h3>AI Extracted Failures</h3>
+            {asset.failures && asset.failures.length > 0 ? (
+              <div className="timeline">
+                {asset.failures.map((f, idx) => (
+                  <div key={idx} className="timeline-item">
+                    <div className="timeline-dot danger"></div>
+                    <div className="timeline-content">
+                      <span className="timeline-date">Detected Issue</span>
+                      <p>{f}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="timeline-item">
-                <div className="timeline-dot info"></div>
-                <div className="timeline-content">
-                  <span className="timeline-date">Jan 14</span>
-                  <p>Technician assigned</p>
-                </div>
-              </div>
-              <div className="timeline-item">
-                <div className="timeline-dot danger"></div>
-                <div className="timeline-content">
-                  <span className="timeline-date">Jan 12</span>
-                  <p>Bearing wear detected</p>
-                </div>
-              </div>
-            </div>
+            ) : (
+              <p className="empty-state">No failures detected by AI in the knowledge base.</p>
+            )}
           </div>
 
           <div className="card drawer-section">
-            <h3>RCA Summary</h3>
-            <div className="rca-box">
-              <h4>Root Cause:</h4>
-              <p>Continuous vibration caused micro-fractures in the primary bearing housing leading to seal failure.</p>
-              <h4 className="mt-4">Recommended Action:</h4>
-              <p>Replace bearing housing and install continuous vibration monitoring sensors.</p>
+            <h3>AI Extracted Maintenance</h3>
+            {asset.maintenance_events && asset.maintenance_events.length > 0 ? (
+              <div className="timeline">
+                {asset.maintenance_events.map((m, idx) => (
+                  <div key={idx} className="timeline-item">
+                    <div className="timeline-dot info"></div>
+                    <div className="timeline-content">
+                      <span className="timeline-date">Maintenance Log</span>
+                      <p>{m}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="empty-state">No maintenance events found.</p>
+            )}
+          </div>
+
+          <div className="card drawer-section">
+            <h3>Source Documents</h3>
+            {asset.documents && asset.documents.length > 0 ? (
+              <ul className="document-list" style={{ listStyle: 'none', padding: 0 }}>
+                {asset.documents.map((doc, idx) => (
+                  <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <FileText size={16} color="var(--primary-color)" />
+                    <span>{doc}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="empty-state">No source documents attached.</p>
+            )}
+            
+            <div style={{marginTop: '1rem', padding: '1rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px', border: '1px solid var(--primary-color)'}}>
+              <p style={{fontSize: '0.85rem', color: 'var(--text-secondary)'}}>
+                <strong>Tip:</strong> Run an analysis on <strong>{asset.id}</strong> in the RCA tab for a deep-dive correlation of these records.
+              </p>
             </div>
           </div>
         </div>

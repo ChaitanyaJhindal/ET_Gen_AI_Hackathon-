@@ -45,8 +45,8 @@ const RCA = () => {
       setResult({
         assetId: assetId,
         rootCause: response.data.root_cause,
-        severity: 'High',
-        confidence: 85,
+        severity: response.data.severity || 'High',
+        confidence: response.data.confidence || 85,
         recommendation: response.data.recommendation,
         mermaidChart: response.data.mermaid_chart
       });

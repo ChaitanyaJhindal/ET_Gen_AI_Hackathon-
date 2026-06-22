@@ -26,20 +26,30 @@ MAINTENANCE HISTORY: {maintenance}
 RELATED DOCUMENTS: {doc_context}
 
 Perform a Root Cause Analysis for {asset_id}.
-Return STRICT JSON with three keys:
+Return STRICT JSON with five keys:
 {{
   "root_cause": "Detailed explanation of the likely root cause",
   "recommendation": "Actionable recommendations",
-  "mermaid_chart": "A valid mermaid.js code snippet (graph TD) illustrating the chain of events leading to the failure. Do not include markdown codeblocks around the mermaid code inside the json string."
+  "mermaid_chart": "A valid mermaid.js code snippet (graph TD) illustrating the chain of events leading to the failure. Do not include markdown codeblocks around the mermaid code inside the json string.",
+  "severity": "Severity of the issue: Low, Medium, High, or Critical",
+  "confidence": "An integer between 0 and 100 representing your confidence in this analysis"
 }}"""
 
         system_prompt = "You are an Industrial RCA Expert. Output ONLY valid JSON."
         result = llm_service.generate_json(prompt, system_prompt)
         
+        # Ensure confidence is a number
+        try:
+            confidence = int(result.get("confidence", 85))
+        except ValueError:
+            confidence = 85
+
         return {
             "root_cause": result.get("root_cause", "Analysis failed."),
             "recommendation": result.get("recommendation", "Analysis failed."),
-            "mermaid_chart": result.get("mermaid_chart", "")
+            "mermaid_chart": result.get("mermaid_chart", ""),
+            "severity": result.get("severity", "High"),
+            "confidence": confidence
         }
 
 rca_service = RCAService()

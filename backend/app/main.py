@@ -25,10 +25,10 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(upload.router)
-app.include_router(assets.router)
-app.include_router(chatbot.router)
-app.include_router(rca.router)
+app.include_router(upload.router, prefix="/api")
+app.include_router(assets.router, prefix="/api")
+app.include_router(chatbot.router, prefix="/api")
+app.include_router(rca.router, prefix="/api")
 
 @app.get("/")
 async def root():

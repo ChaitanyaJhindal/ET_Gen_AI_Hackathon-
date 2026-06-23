@@ -94,17 +94,19 @@ Your ONLY task is to convert this chain of events into a highly detailed Mermaid
                 model_override="llama-3.3-70b-versatile"
             )
             
-            # Final sanity cleanup just in case Llama disobeys the "no markdown" rule
-            if mermaid_chart.startswith("```mermaid"):
-                mermaid_chart = mermaid_chart.replace("```mermaid", "").replace("```", "").strip()
-            elif mermaid_chart.startswith("```"):
-                mermaid_chart = mermaid_chart.replace("```", "").strip()
+            # Extract only the graph TD block using regex in case the LLM hallucinates conversational preamble
+            import re
+            mermaid_match = re.search(r'(graph TD.*)', mermaid_chart, re.DOTALL)
+            if mermaid_match:
+                mermaid_chart = mermaid_match.group(1).strip()
+            
+            # Remove any trailing markdown backticks
+            mermaid_chart = mermaid_chart.replace("```mermaid", "").replace("```", "").strip()
                 
             # Automatically fix the LLM's persistent hallucination of `-->|text|>` to the valid `-->|text|`
             mermaid_chart = mermaid_chart.replace("|>", "|")
             
             # Fix Mermaid syntax errors (spaces after commas in style tags break parsing)
-            import re
             mermaid_chart = re.sub(r',\s+color:', ',color:', mermaid_chart)
             mermaid_chart = re.sub(r',\s+stroke:', ',stroke:', mermaid_chart)
         else:

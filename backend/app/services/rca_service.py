@@ -7,8 +7,9 @@ logger = logging.getLogger(__name__)
 
 class RCAService:
     def generate_rca(self, asset_id: str) -> dict:
-        # Standardize asset ID (e.g. "MD 800" -> "MD-800")
-        asset_id_clean = str(asset_id).upper().replace(" ", "-")
+        # Standardize asset ID (e.g. "MD 800" -> "MD-800", "PB - 700" -> "PB-700")
+        import re
+        asset_id_clean = re.sub(r'[\s\-]+', '-', str(asset_id).upper().strip())
         
         # Load asset data
         data = knowledge_service.get_asset(asset_id_clean)
@@ -79,6 +80,7 @@ CRITICAL INSTRUCTION: The `reasoning_chain` MUST be an array of 3 to 5 strings r
 Your ONLY task is to convert this chain of events into a highly detailed Mermaid.js flowchart (graph TD).
 - DO NOT just make a simple straight line. If multiple events occur concurrently or contribute to the same outcome, branch them out so they appear at the same height/rank (e.g., A-->C and B-->C).
 - You MUST use descriptive edge labels to explain the reasoning between nodes. STRICT SYNTAX RULE: You must use EXACTLY the syntax `A -->|text| B`. Do NOT add an extra arrow head after the pipe (e.g. NEVER use `-->|text|>`).
+- STRICT SYNTAX RULE: You MUST wrap all node text in double quotes to prevent syntax crashes! Example: `A["Machine Vibration (High)"] --> B["Bearing Failure"]`. Never use unquoted brackets like `A[Machine]`.
 - If you use 'style' tags to color-code nodes by severity, you MUST use deep/dark colors (e.g., fill:#7f1d1d for critical red, fill:#1e3a8a for blue, fill:#78350f for orange) and explicitly set the text color to white (e.g., color:#ffffff) to maintain contrast against our dark UI theme! Never use light pastel colors.
 - Output ONLY the raw Mermaid code starting with 'graph TD'.
 - Do NOT wrap the code in markdown backticks (e.g., no ```mermaid). Just the raw code."""
@@ -100,6 +102,11 @@ Your ONLY task is to convert this chain of events into a highly detailed Mermaid
                 
             # Automatically fix the LLM's persistent hallucination of `-->|text|>` to the valid `-->|text|`
             mermaid_chart = mermaid_chart.replace("|>", "|")
+            
+            # Fix Mermaid syntax errors (spaces after commas in style tags break parsing)
+            import re
+            mermaid_chart = re.sub(r',\s+color:', ',color:', mermaid_chart)
+            mermaid_chart = re.sub(r',\s+stroke:', ',stroke:', mermaid_chart)
         else:
             mermaid_chart = ""
 
